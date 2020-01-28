@@ -33,17 +33,7 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 	checkReset();
 	chrome.tabs.get(activeInfo.tabId, function(tab){
 		currentTab = tab;
-		if (isYoutube(tab.url) && !onYoutube) {
-			if (!override) {
-				onYoutube = true;
-				startTime();	
-			} else {
-				checkOverride(tab.url);
-			}
-		} else if (!isYoutube(tab.url) && onYoutube && !override) {
-			onYoutube = false;
-			stopTime();
-		}
+		checkTab4YouTube(tab.url)
 	});
 });
 
@@ -51,17 +41,24 @@ chrome.tabs.onUpdated.addListener(function(tabId, changedInfo, tab) {
 	checkReset();
 	if(tab.active && changedInfo.url){
 		currentTab = tab;
-		if (isYoutube(changedInfo.url) && !onYoutube) {
-			if (!override) {
-				onYoutube = true;
-				startTime();	
-			} else {
-				checkOverride(changedInfo.url);
+		checkTab4YouTube(changedInfo.url)
+	}
+});
+
+chrome.windows.onFocusChanged.addListener(function(windowId) {
+	checkReset();
+	if(windowId == chrome.windows.WINDOW_ID_NONE && typeof timer != 'undefined') {
+		onYoutube = false;
+		stopTime();
+	} else if(windowId != chrome.windows.WINDOW_ID_NONE) {
+		var getInfo = {populate: true};
+		chrome.windows.get(windowId, getInfo, function(window) {
+			for(var i = 0; i < window.tabs.length; i++) {
+				if(window.tabs[i].active) {
+					checkTab4YouTube(window.tabs[i].url)
+				}
 			}
-		} else if (!isYoutube(changedInfo.url) && onYoutube && !override) {
-			onYoutube = false;
-			stopTime();
-		}
+		});
 	}
 });
 
@@ -117,6 +114,7 @@ function startTime() {
 }
 
 function stopTime() {
+	console.log("stopped")
 	clearInterval(timer);
 	chrome.browserAction.setBadgeText({"text": ""});
 }
@@ -220,4 +218,18 @@ function urlNoTime(url) {
 		return arr[0];
 	}
 	return null
+}
+
+function checkTab4YouTube(url) {
+	if (isYoutube(url) && !onYoutube) {
+		if (!override) {
+			onYoutube = true;
+			startTime();	
+		} else {
+			checkOverride(url);
+		}
+	} else if (!isYoutube(url) && onYoutube && !override) {
+		onYoutube = false;
+		stopTime();
+	}
 }
