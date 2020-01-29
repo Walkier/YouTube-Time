@@ -45,6 +45,31 @@ chrome.tabs.onUpdated.addListener(function(tabId, changedInfo, tab) {
 	}
 });
 
+window.setInterval(checkBrowserFocus, 1000);  
+
+function checkBrowserFocus(){
+	if(typeof timer != 'undefined') {
+		chrome.windows.getCurrent(function(browser){
+			if(browser.focused) {
+				if(!onYoutube) {
+					var getInfo = {populate: true};
+					chrome.windows.getCurrent(getInfo, function(window) {
+						for(var i = 0; i < window.tabs.length; i++) {
+							if(window.tabs[i].active) {
+								checkTab4YouTube(window.tabs[i].url)
+							}
+						}
+					});
+				}
+			} else if(onYoutube) {
+				console.log("bow stop")
+				onYoutube = false;
+				stopTime();
+		  }
+		})
+	}
+}
+
 chrome.windows.onFocusChanged.addListener(function(windowId) {
 	checkReset();
 	if(windowId == chrome.windows.WINDOW_ID_NONE && typeof timer != 'undefined') {
@@ -52,7 +77,7 @@ chrome.windows.onFocusChanged.addListener(function(windowId) {
 		stopTime();
 	} else if(windowId != chrome.windows.WINDOW_ID_NONE) {
 		var getInfo = {populate: true};
-		chrome.windows.get(windowId, getInfo, function(window) {
+		chrome.windows.getCurrent(getInfo, function(window) {
 			for(var i = 0; i < window.tabs.length; i++) {
 				if(window.tabs[i].active) {
 					checkTab4YouTube(window.tabs[i].url)
@@ -109,12 +134,13 @@ function updateTime() {
 }
 
 function startTime() {
+	// console.log("start", timeLeft)
 	chrome.browserAction.setBadgeText({"text": formatTime(timeLeft)});
 	timer = setInterval(updateTime, 1000);
 }
 
 function stopTime() {
-	console.log("stopped")
+	// console.log("stopped", timeLeft)
 	clearInterval(timer);
 	chrome.browserAction.setBadgeText({"text": ""});
 }
@@ -167,7 +193,7 @@ function blockRedirect() {
 function checkReset() {
 	chrome.storage.local.get("lastDate", function(data) {
 		var today = new Date();
-		today.setHours(0,0,0,0);
+		today.setHours(5,0,0,0);
 		if (!data.lastDate || today.toString() != data.lastDate) {
 			chrome.storage.local.get({"timeLimit":30}, function(data) {
 
@@ -221,6 +247,7 @@ function urlNoTime(url) {
 }
 
 function checkTab4YouTube(url) {
+	// console.log("checkTab4YouTube")
 	if (isYoutube(url) && !onYoutube) {
 		if (!override) {
 			onYoutube = true;
