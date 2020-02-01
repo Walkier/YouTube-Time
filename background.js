@@ -193,11 +193,10 @@ function blockRedirect() {
 function checkReset() {
 	chrome.storage.local.get("lastDate", function(data) {
 		var today = new Date();
-		today.setHours(5,0,0,0);
-		if (!data.lastDate || today.toString() != data.lastDate) {
+		if(!data.lastDate || (today.getDate().toString() != data.lastDate && today.getHours() == 6)) {
 			chrome.storage.local.get({"timeLimit":30}, function(data) {
 
-				chrome.storage.local.set({"lastDate":today.toString(), "override":false, "timeLeft":data.timeLimit*60}, function () {
+				chrome.storage.local.set({"lastDate":today.getDate().toString(), "override":false, "timeLeft":data.timeLimit*60}, function () {
 					chrome.runtime.sendMessage({
 						msg: "checkDone"
 					});
